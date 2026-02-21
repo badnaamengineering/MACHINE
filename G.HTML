@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Zero to Hero: 2026 Roadmap</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Chosen Palette: Warm Neutrals & Calm Harmony -->
+    <!-- 
+        Background: #FAFAF9 (Stone 50)
+        Sidebar/Cards: #FFFFFF (White)
+        Text Primary: #1C1917 (Stone 900)
+        Text Secondary: #57534E (Stone 600)
+        Accent Main: #EA580C (Orange 600 - High energy for action)
+        Accent Soft: #FDBA74 (Orange 300)
+        Chart Colors: Muted Earth Tones (Teal, Ochre, Terracotta)
+    -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        stone: {
+                            50: '#fafaf9',
+                            100: '#f5f5f4',
+                            800: '#292524',
+                            900: '#1c1917',
+                        },
+                        accent: {
+                            light: '#fdba74',
+                            DEFAULT: '#ea580c',
+                            dark: '#c2410c',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d6d3d1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a29e; 
+        }
+
+        /* Chart Container Classes as per requirements */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px; /* Max width constraint */
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px; /* Base height */
+            max-height: 400px; /* Max height constraint */
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+
+    <!-- Application Structure Plan: 
+         1. Sidebar Navigation: persistent access to the 5 Phases and the Overview.
+         2. Main Content Area: Dynamic container.
+            - Overview Dashboard: High-level metrics (Total time, difficulty curve).
+            - Phase Detail Views: Specific resources, goals, and a specific "Focus Chart".
+         3. Logic: Users click sidebar items -> State updates -> DOM repopulates -> Charts destroy/re-render.
+         4. Why? The linear nature of a roadmap fits a tabbed approach perfectly, allowing users to focus on one "week" at a time without seeing the scary math parts until they are ready.
+    -->
+
+    <!-- Visualization & Content Choices:
+         1. Overview - Bar Chart: "Weeks per Phase". Goal: Inform user of time commitment.
+         2. Phase Details - Donut Chart: "Activity Split" (Coding vs Watching vs Math). Goal: Guide behavior (e.g., Phase 1 is 100% easy, Phase 2 is 80% coding).
+         3. Portfolio - Grid Cards: Showcases projects.
+         4. NO SVG/Mermaid. Pure Chart.js and Tailwind Grid/Flex.
+    -->
+    
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="bg-stone-50 text-stone-900 font-sans h-screen overflow-hidden flex flex-col md:flex-row">
+
+    <!-- Mobile Header -->
+    <header class="md:hidden bg-white border-b border-stone-200 p-4 flex justify-between items-center z-10">
+        <h1 class="font-bold text-lg text-accent">ML Roadmap 2026</h1>
+        <button id="mobile-menu-btn" class="text-stone-600 focus:outline-none text-2xl">
+            &#9776; <!-- Hamburger Icon Unicode -->
+        </button>
+    </header>
+
+    <!-- Sidebar Navigation -->
+    <nav id="sidebar" class="bg-white border-r border-stone-200 w-full md:w-64 flex-shrink-0 absolute md:relative h-full transform -translate-x-full md:translate-x-0 transition-transform duration-300 z-20 shadow-lg md:shadow-none flex flex-col">
+        <div class="p-6 border-b border-stone-100 hidden md:block">
+            <h1 class="font-bold text-2xl tracking-tight text-stone-800">ML Roadmap <span class="text-accent">2026</span></h1>
+            <p class="text-xs text-stone-500 mt-1">From Zero to Hero (Free)</p>
+        </div>
+
+        <div class="flex-1 overflow-y-auto py-4">
+            <ul class="space-y-1 px-3">
+                <li>
+                    <button onclick="app.navigate('overview')" class="nav-item w-full text-left px-4 py-3 rounded-lg flex items-center transition-colors hover:bg-stone-100 text-stone-600 font-medium" data-target="overview">
+                        <span class="mr-3">📊</span> Dashboard Overview
+                    </button>
+                </li>
+                <li class="pt-4 pb-2 px-4 text-xs font-semibold text-stone-400 uppercase tracking-wider">The Journey</li>
+                <li>
+                    <button onclick="app.navigate('phase1')" class="nav-item w-full text-left px-4 py-3 rounded-lg flex items-center transition-colors hover:bg-stone-100 text-stone-600" data-target="phase1">
+                        <span class="mr-3">1️⃣</span> Phase 1: No-Code Start
+                    </button>
+                </li>
+                <li>
+                    <button onclick="app.navigate('phase2')" class="nav-item w-full text-left px-4 py-3 rounded-lg flex items-center transition-colors hover:bg-stone-100 text-stone-600" data-target="phase2">
+                        <span class="mr-3">2️⃣</span> Phase 2: Python Tools
+                    </button>
+                </li>
+                <li>
+                    <button onclick="app.navigate('phase3')" class="nav-item w-full text-left px-4 py-3 rounded-lg flex items-center transition-colors hover:bg-stone-100 text-stone-600" data-target="phase3">
+                        <span class="mr-3">3️⃣</span> Phase 3: Gold Standard
+                    </button>
+                </li>
+                <li>
+                    <button onclick="app.navigate('phase4')" class="nav-item w-full text-left px-4 py-3 rounded-lg flex items-center transition-colors hover:bg-stone-100 text-stone-600" data-target="phase4">
+                        <span class="mr-3">4️⃣</span> Phase 4: Applied Math
+                    </button>
+                </li>
+                <li>
+                    <button onclick="app.navigate('phase5')" class="nav-item w-full text-left px-4 py-3 rounded-lg flex items-center transition-colors hover:bg-stone-100 text-stone-600" data-target="phase5">
+                        <span class="mr-3">5️⃣</span> Phase 5: Portfolio
+                    </button>
+                </li>
+                <li class="pt-4 pb-2 px-4 text-xs font-semibold text-stone-400 uppercase tracking-wider">Extras</li>
+                <li>
+                    <button onclick="app.navigate('tips')" class="nav-item w-full text-left px-4 py-3 rounded-lg flex items-center transition-colors hover:bg-stone-100 text-stone-600" data-target="tips">
+                        <span class="mr-3">💡</span> Pro-Tips
+                    </button>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="p-4 border-t border-stone-100 bg-stone-50">
+            <div class="text-xs text-stone-500 text-center">
+                Based on 2026 Guide <br>
+                <span class="text-accent font-semibold">Start Easy. Build Fast.</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto p-4 md:p-8 relative" id="main-content">
+        <!-- Dynamic Content Injected Here -->
+    </main>
+
+    <!-- Overlay for mobile sidebar -->
+    <div id="overlay" class="fixed inset-0 bg-black opacity-50 z-10 hidden md:hidden"></div>
+
+    <script>
+        // --- DATA STORE ---
+        const roadmapData = {
+            overview: {
+                title: "Your 2026 ML Journey",
+                intro: "Machine Learning doesn't have to be hard or expensive. This interactive dashboard guides you through the 'Easy Way'—prioritizing hands-on coding and visual intuition over heavy math. Use the menu to explore each phase.",
+                stats: [
+                    { label: "Total Phases", value: "5", icon: "🚀" },
+                    { label: "Est. Duration", value: "12 Wks", icon: "⏳" },
+                    { label: "Cost", value: "$0", icon: "💰" },
+                    { label: "Key Strategy", value: "Code First", icon: "💻" }
+                ],
+                chartData: {
+                    labels: ['Ph 1: No-Code', 'Ph 2: Python', 'Ph 3: Deep Dive', 'Ph 4: Math', 'Ph 5: Portfolio'],
+                    data: [1, 3, 6, 4, 8], // Relative weeks/effort
+                    colors: ['#a8a29e', '#ea580c', '#0f766e', '#b45309', '#78716c']
+                }
+            },
+            phase1: {
+                title: "Phase 1: The 'No-Code' Start",
+                subtitle: "Week 1",
+                intro: "Before writing a single line of code, your goal is to understand how machines 'see' the world. This phase builds high-level intuition using visual tools.",
+                focus: {
+                    labels: ["Concept/Theory", "Play/Experiment", "Coding"],
+                    data: [60, 40, 0],
+                    color: "#a8a29e" // Stone
+                },
+                resources: [
+                    {
+                        name: "Google Teachable Machine",
+                        type: "Tool",
+                        desc: "Train a model using your webcam in seconds. No code required.",
+                        link: "https://teachablemachine.withgoogle.com/"
+                    },
+                    {
+                        name: "Elements of AI",
+                        type: "Course",
+                        desc: "Free, non-technical course by Univ. of Helsinki. Conceptual foundations.",
+                        link: "https://www.elementsofai.com/"
+                    }
+                ],
+                checklist: [
+                    "Train an image model with Teachable Machine",
+                    "Understand basic AI terminology",
+                    "Realize that AI is just math, not magic"
+                ]
+            },
+            phase2: {
+                title: "Phase 2: Essential Coding & Data Tools",
+                subtitle: "Weeks 2-4",
+                intro: "Python is the language of ML. You don't need to be a software engineer, but you need to know how to handle data. This phase focuses on the 'Big 3': Python, Pandas, and Colab.",
+                focus: {
+                    labels: ["Python Syntax", "Data Manipulation", "Environment Setup"],
+                    data: [40, 40, 20],
+                    color: "#ea580c" // Accent Orange
+                },
+                resources: [
+                    {
+                        name: "Kaggle Learn (Python)",
+                        type: "Course",
+                        desc: "5-hour interactive course teaching only the Python needed for Data Science.",
+                        link: "https://www.kaggle.com/learn/python"
+                    },
+                    {
+                        name: "Pandas & NumPy",
+                        type: "Library",
+                        desc: "Learn to handle data tables. Use Kaggle's 'Pandas' track.",
+                        link: "#"
+                    },
+                    {
+                        name: "Google Colab",
+                        type: "Tool",
+                        desc: "Cloud-based Python environment with free GPUs.",
+                        link: "https://colab.research.google.com/"
+                    }
+                ],
+                checklist: [
+                    "Complete Kaggle Python Course",
+                    "Load a CSV file using Pandas",
+                    "Run your first Python script in Google Colab"
+                ]
+            },
+            phase3: {
+                title: "Phase 3: The 'Gold Standard' Courses",
+                subtitle: "Weeks 5-10",
+                intro: "Now that you can code, follow the industry's most famous free paths. We focus on 'Top-Down' learning: building models first, understanding theory later.",
+                focus: {
+                    labels: ["Watching Lectures", "Hands-on Coding", "Reading Docs"],
+                    data: [40, 50, 10],
+                    color: "#0f766e" // Teal
+                },
+                resources: [
+                    {
+                        name: "Andrew Ng’s Specialization",
+                        type: "Coursera (Audit)",
+                        desc: "Focus on the intuition behind algorithms. The most famous ML course.",
+                        link: "#"
+                    },
+                    {
+                        name: "Fast.ai",
+                        type: "Course",
+                        desc: "Practical Deep Learning for Coders. Build state-of-the-art models immediately.",
+                        link: "https://course.fast.ai/"
+                    },
+                    {
+                        name: "Google ML Crash Course",
+                        type: "Course",
+                        desc: "Fast-paced, practical guide from Google engineers.",
+                        link: "https://developers.google.com/machine-learning/crash-course"
+                    }
+                ],
+                checklist: [
+                    "Audit Andrew Ng's course (don't pay)",
+                    "Build an image classifier with Fast.ai",
+                    "Understand 'Gradient Descent' conceptually"
+                ]
+            },
+            phase4: {
+                title: "Phase 4: Applied Math",
+                subtitle: "Learn as you go",
+                intro: "Don't get stuck in textbooks. The 'Easy Way' means learning math *only* when you encounter it in your code. This is Just-In-Time learning.",
+                focus: {
+                    labels: ["Linear Algebra", "Calculus", "Statistics"],
+                    data: [40, 30, 30],
+                    color: "#b45309" // Amber
+                },
+                resources: [
+                    {
+                        name: "Khan Academy",
+                        type: "Platform",
+                        desc: "Matrices, Derivatives, and Statistics basics.",
+                        link: "#"
+                    },
+                    {
+                        name: "3Blue1Brown",
+                        type: "YouTube",
+                        desc: "Essence of Linear Algebra & Neural Networks. Visual explanations.",
+                        link: "#"
+                    }
+                ],
+                checklist: [
+                    "Watch 3Blue1Brown's Neural Network series",
+                    "Understand Matrix Multiplication (Dot Product)",
+                    "Learn what a 'Derivative' means for optimization"
+                ]
+            },
+            phase5: {
+                title: "Phase 5: Building a Portfolio",
+                subtitle: "Ongoing",
+                intro: "Certificates don't get jobs; projects do. Here are the three essential 'Hello World' projects to prove your skills.",
+                focus: {
+                    labels: ["Data Cleaning", "Model Tuning", "Presentation"],
+                    data: [50, 30, 20],
+                    color: "#78716c" // Stone
+                },
+                resources: [
+                    {
+                        name: "Titanic Survival",
+                        type: "Project",
+                        desc: "Predict who survives the shipwreck. The classic beginner project.",
+                        link: "#"
+                    },
+                    {
+                        name: "House Price Regression",
+                        type: "Project",
+                        desc: "Predict prices based on square footage and location.",
+                        link: "#"
+                    },
+                    {
+                        name: "Image Classifier",
+                        type: "Project",
+                        desc: "Distinguish between birds vs cars using Fast.ai.",
+                        link: "#"
+                    }
+                ],
+                checklist: [
+                    "Submit Titanic prediction to Kaggle",
+                    "Create a GitHub repository for your code",
+                    "Write a README explaining your House Price model"
+                ]
+            },
+            tips: {
+                title: "Pro-Tips & Community",
+                subtitle: "Free Learning Hacks",
+                intro: "Learning for free requires discipline. Here are the secrets to staying on track and finding high-quality help.",
+                tipsList: [
+                    { title: "Audit, Don't Buy", text: "On Coursera/edX, look for the small 'Audit' link. You get the content for free, just no certificate." },
+                    { title: "YouTube is Gold", text: "Follow channels like Sentdex, Krish Naik, and StatQuest with Josh Starmer." },
+                    { title: "Kaggle Copying", text: "Look at the 'Code' tab of competition winners. It's legal to learn from their secrets!" },
+                    { title: "Consistency", text: "30 mins daily > 10 hours once a week." }
+                ]
+            }
+        };
+
+        // --- CHART INSTANCE STORE ---
+        let currentChart = null;
+
+        // --- APP LOGIC ---
+        const app = {
+            init: () => {
+                app.navigate('overview');
+                app.setupMobileMenu();
+            },
+
+            setupMobileMenu: () => {
+                const btn = document.getElementById('mobile-menu-btn');
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('overlay');
+
+                function toggleMenu() {
+                    const isClosed = sidebar.classList.contains('-translate-x-full');
+                    if (isClosed) {
+                        sidebar.classList.remove('-translate-x-full');
+                        overlay.classList.remove('hidden');
+                    } else {
+                        sidebar.classList.add('-translate-x-full');
+                        overlay.classList.add('hidden');
+                    }
+                }
+
+                btn.addEventListener('click', toggleMenu);
+                overlay.addEventListener('click', toggleMenu);
+                
+                // Close menu on link click (mobile)
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        if (window.innerWidth < 768) {
+                            toggleMenu();
+                        }
+                    });
+                });
+            },
+
+            navigate: (targetKey) => {
+                // Update Sidebar UI
+                document.querySelectorAll('.nav-item').forEach(el => {
+                    if(el.dataset.target === targetKey) {
+                        el.classList.add('bg-stone-100', 'text-accent', 'font-semibold');
+                        el.classList.remove('text-stone-600');
+                    } else {
+                        el.classList.remove('bg-stone-100', 'text-accent', 'font-semibold');
+                        el.classList.add('text-stone-600');
+                    }
+                });
+
+                // Render Content
+                const contentDiv = document.getElementById('main-content');
+                contentDiv.innerHTML = ''; // Clear current
+                
+                if (targetKey === 'overview') {
+                    app.renderOverview(contentDiv, roadmapData.overview);
+                } else if (targetKey === 'tips') {
+                    app.renderTips(contentDiv, roadmapData.tips);
+                } else {
+                    app.renderPhase(contentDiv, roadmapData[targetKey]);
+                }
+            },
+
+            renderOverview: (container, data) => {
+                const html = `
+                    <div class="fade-in max-w-5xl mx-auto">
+                        <div class="mb-8">
+                            <h2 class="text-3xl font-bold text-stone-900">${data.title}</h2>
+                            <p class="mt-2 text-stone-600 text-lg max-w-3xl">${data.intro}</p>
+                        </div>
+
+                        <!-- Stats Grid -->
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                            ${data.stats.map(stat => `
+                                <div class="bg-white p-4 rounded-xl border border-stone-200 shadow-sm flex flex-col items-center justify-center text-center">
+                                    <span class="text-3xl mb-2">${stat.icon}</span>
+                                    <span class="text-2xl font-bold text-stone-800">${stat.value}</span>
+                                    <span class="text-xs uppercase tracking-wide text-stone-500 font-semibold">${stat.label}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        <!-- Main Chart Section -->
+                        <div class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm mb-8">
+                            <h3 class="text-lg font-bold text-stone-800 mb-4">Roadmap Intensity & Duration (Weeks)</h3>
+                            <p class="text-sm text-stone-500 mb-6">This chart shows the relative time investment recommended for each phase.</p>
+                            <div class="chart-container">
+                                <canvas id="mainChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Call to Action -->
+                        <div class="bg-accent/10 p-6 rounded-xl border border-accent/20 flex flex-col md:flex-row items-center justify-between">
+                            <div class="mb-4 md:mb-0">
+                                <h3 class="font-bold text-accent-dark text-lg">Ready to start?</h3>
+                                <p class="text-stone-700">Begin with Phase 1: The No-Code Start.</p>
+                            </div>
+                            <button onclick="app.navigate('phase1')" class="bg-accent hover:bg-accent-dark text-white px-6 py-3 rounded-lg font-semibold transition-colors shadow-md">
+                                Start Phase 1 &rarr;
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML = html;
+
+                // Render Chart
+                const ctx = document.getElementById('mainChart').getContext('2d');
+                if (currentChart) currentChart.destroy();
+                
+                currentChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.chartData.labels,
+                        datasets: [{
+                            label: 'Weeks Recommended',
+                            data: data.chartData.data,
+                            backgroundColor: data.chartData.colors,
+                            borderRadius: 6,
+                            barThickness: 40
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: { display: true, text: 'Estimated Weeks' }
+                            },
+                            x: {
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            },
+
+            renderPhase: (container, data) => {
+                const html = `
+                    <div class="fade-in max-w-5xl mx-auto">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b border-stone-200 pb-4">
+                            <div>
+                                <span class="inline-block bg-accent/10 text-accent-dark text-xs font-bold px-2 py-1 rounded mb-2 uppercase tracking-wide">${data.subtitle}</span>
+                                <h2 class="text-3xl font-bold text-stone-900">${data.title}</h2>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <!-- Left Col: Content & Resources -->
+                            <div class="lg:col-span-2 space-y-8">
+                                <div class="prose prose-stone">
+                                    <p class="text-lg text-stone-600 leading-relaxed">${data.intro}</p>
+                                </div>
+
+                                <div>
+                                    <h3 class="text-xl font-bold text-stone-800 mb-4 flex items-center">
+                                        <span class="mr-2">📚</span> Top Resources
+                                    </h3>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        ${data.resources.map(res => `
+                                            <a href="${res.link}" target="_blank" class="block p-4 bg-white border border-stone-200 rounded-xl shadow-sm hover:shadow-md hover:border-accent transition-all group">
+                                                <div class="flex justify-between items-start mb-2">
+                                                    <span class="text-xs font-bold bg-stone-100 text-stone-500 px-2 py-1 rounded group-hover:bg-accent/10 group-hover:text-accent-dark transition-colors">${res.type}</span>
+                                                    <span class="text-stone-400 group-hover:text-accent">&nearr;</span>
+                                                </div>
+                                                <h4 class="font-bold text-stone-800 mb-1 group-hover:text-accent">${res.name}</h4>
+                                                <p class="text-sm text-stone-500 line-clamp-2">${res.desc}</p>
+                                            </a>
+                                        `).join('')}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h3 class="text-xl font-bold text-stone-800 mb-4 flex items-center">
+                                        <span class="mr-2">✅</span> Success Checklist
+                                    </h3>
+                                    <div class="bg-white rounded-xl border border-stone-200 p-1">
+                                        ${data.checklist.map((item, idx) => `
+                                            <label class="flex items-center p-3 hover:bg-stone-50 rounded-lg cursor-pointer transition-colors border-b last:border-0 border-stone-100">
+                                                <input type="checkbox" class="form-checkbox h-5 w-5 text-accent rounded border-stone-300 focus:ring-accent">
+                                                <span class="ml-3 text-stone-700">${item}</span>
+                                            </label>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right Col: Focus Chart -->
+                            <div class="lg:col-span-1">
+                                <div class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm sticky top-6">
+                                    <h3 class="font-bold text-stone-800 mb-2">Focus Distribution</h3>
+                                    <p class="text-xs text-stone-500 mb-4">How to spend your time in this phase.</p>
+                                    
+                                    <div class="chart-container" style="height: 250px;">
+                                        <canvas id="phaseChart"></canvas>
+                                    </div>
+
+                                    <div class="mt-6 p-4 bg-stone-50 rounded-lg text-sm text-stone-600 italic border border-stone-100">
+                                        "Don't rush. Master these basics before moving on."
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML = html;
+
+                // Render Donut Chart
+                const ctx = document.getElementById('phaseChart').getContext('2d');
+                if (currentChart) currentChart.destroy();
+
+                currentChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.focus.labels,
+                        datasets: [{
+                            data: data.focus.data,
+                            backgroundColor: [
+                                data.focus.color, 
+                                '#d6d3d1', // lighter stone
+                                '#57534e'  // darker stone
+                            ],
+                            borderWidth: 0,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { boxWidth: 12, font: { size: 11 } }
+                            }
+                        }
+                    }
+                });
+            },
+
+            renderTips: (container, data) => {
+                const html = `
+                    <div class="fade-in max-w-4xl mx-auto">
+                        <div class="mb-8 text-center">
+                            <h2 class="text-3xl font-bold text-stone-900">${data.title}</h2>
+                            <p class="mt-2 text-stone-600 text-lg">${data.intro}</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            ${data.tipsList.map(tip => `
+                                <div class="bg-white p-6 rounded-xl border-l-4 border-accent shadow-sm">
+                                    <h3 class="font-bold text-lg text-stone-800 mb-2">${tip.title}</h3>
+                                    <p class="text-stone-600">${tip.text}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        <div class="mt-12 text-center">
+                            <h3 class="font-bold text-stone-800 mb-4">Recommended YouTube Channels</h3>
+                            <div class="flex flex-wrap justify-center gap-3">
+                                <span class="px-4 py-2 bg-red-100 text-red-800 rounded-full font-semibold text-sm">3Blue1Brown</span>
+                                <span class="px-4 py-2 bg-red-100 text-red-800 rounded-full font-semibold text-sm">Sentdex</span>
+                                <span class="px-4 py-2 bg-red-100 text-red-800 rounded-full font-semibold text-sm">Krish Naik</span>
+                                <span class="px-4 py-2 bg-red-100 text-red-800 rounded-full font-semibold text-sm">StatQuest</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML = html;
+            }
+        };
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', app.init);
+
+    </script>
+</body>
+</html>
